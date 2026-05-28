@@ -1,36 +1,36 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 type RiskItem = {
   title: string;
   value: number;
   color: string;
   chip: string;
-  chipTone: "moderate" | "high";
+  chipTone: "low" | "moderate" | "high";
   factors: string[];
   recommendations: string[];
 };
 
-const riskItems: RiskItem[] = [
-  {
+const baseRiskDetails: Record<string, {
+  title: string;
+  color: string;
+  factors: string[];
+  recommendations: string[];
+}> = {
+  back_pain: {
     title: "Back Pain",
-    value: 44,
     color: "#c70039",
-    chip: "Moderate Risk",
-    chipTone: "moderate",
-    factors: ["Infrequent study breaks"],
+    factors: ["Infrequent study breaks", "Non-ergonomic chair setup"],
     recommendations: [
       "Take a standing or walking break every 30 minutes",
-      "Invest in an ergonomic chair with lumbar support",
+      "Invest in an ergonomic office chair with lumbar support",
     ],
   },
-  {
+  neck_pain: {
     title: "Neck Strain",
-    value: 70,
     color: "#ef6c0c",
-    chip: "High Risk",
-    chipTone: "high",
     factors: [
       "Screen not at eye level",
       "Laptop-only input causes hunching",
@@ -44,25 +44,19 @@ const riskItems: RiskItem[] = [
       "Reduce stress with brief mindfulness or breathing exercises",
     ],
   },
-  {
+  tension_headache: {
     title: "Tension Headaches",
-    value: 53,
     color: "#b04a9a",
-    chip: "High Risk",
-    chipTone: "high",
-    factors: ["Elevated stress during study"],
+    factors: ["Elevated stress during study", "Insufficient hydration"],
     recommendations: [
       "Follow the 20–20–20 rule: every 20 min, look 20 feet away for 20 sec",
       "Ensure your study space has adequate, even lighting",
       "Limit caffeine to 2–3 cups per day and avoid it after 2 PM",
     ],
   },
-  {
+  wrist_pain: {
     title: "Wrist Pain",
-    value: 72,
     color: "#7174c6",
-    chip: "High Risk",
-    chipTone: "high",
     factors: [
       "Non-ergonomic input method",
       "Not enough breaks",
@@ -72,15 +66,11 @@ const riskItems: RiskItem[] = [
       "Keep your wrists in a neutral position while typing",
       "Do wrist circles and stretches every 30 minutes",
       "Consider a wrist rest or ergonomic keyboard",
-      "Reduce continuous typing by taking short voice-note breaks",
     ],
   },
-  {
+  eye_strain: {
     title: "Eye Strain",
-    value: 51,
     color: "#0e9a5b",
-    chip: "High Risk",
-    chipTone: "high",
     factors: ["Infrequent eye breaks", "Screen below eye level"],
     recommendations: [
       "Apply the 20–20–20 rule consistently during study sessions",
@@ -88,16 +78,12 @@ const riskItems: RiskItem[] = [
       "Use blue-light filtering glasses or enable night mode",
     ],
   },
-  {
+  finger_numbness: {
     title: "Finger Numbness",
-    value: 69,
     color: "#c70039",
-    chip: "High Risk",
-    chipTone: "high",
     factors: [
       "Poor input ergonomics",
       "Infrequent breaks",
-      "Pre-existing condition",
     ],
     recommendations: [
       "Stretch and wiggle your fingers during every break",
@@ -105,9 +91,143 @@ const riskItems: RiskItem[] = [
       "Use an ergonomic mouse and keyboard to reduce strain",
     ],
   },
-];
+};
 
-const overallRisk = 60;
+const generateRiskItems = (predictions: any): RiskItem[] => {
+  if (!predictions) {
+    // Return high-quality fallback mock data if no predictions loaded yet
+    return [
+      {
+        title: "Back Pain",
+        value: 44,
+        color: "#c70039",
+        chip: "Moderate Risk",
+        chipTone: "moderate",
+        factors: ["Infrequent study breaks"],
+        recommendations: [
+          "Take a standing or walking break every 30 minutes",
+          "Invest in an ergonomic chair with lumbar support",
+        ],
+      },
+      {
+        title: "Neck Strain",
+        value: 70,
+        color: "#ef6c0c",
+        chip: "High Risk",
+        chipTone: "high",
+        factors: [
+          "Screen not at eye level",
+          "Laptop-only input causes hunching",
+          "High stress levels",
+        ],
+        recommendations: [
+          "Position your screen at eye level using a laptop stand or books",
+          "Do gentle neck stretches every 30 minutes",
+          "Use an external monitor to reduce looking down at your laptop",
+          "Practice chin tucks and neck rolls throughout the day",
+          "Reduce stress with brief mindfulness or breathing exercises",
+        ],
+      },
+      {
+        title: "Tension Headaches",
+        value: 53,
+        color: "#b04a9a",
+        chip: "High Risk",
+        chipTone: "high",
+        factors: ["Elevated stress during study"],
+        recommendations: [
+          "Follow the 20–20–20 rule: every 20 min, look 20 feet away for 20 sec",
+          "Ensure your study space has adequate, even lighting",
+          "Limit caffeine to 2–3 cups per day and avoid it after 2 PM",
+        ],
+      },
+      {
+        title: "Wrist Pain",
+        value: 72,
+        color: "#7174c6",
+        chip: "High Risk",
+        chipTone: "high",
+        factors: [
+          "Non-ergonomic input method",
+          "Not enough breaks",
+        ],
+        recommendations: [
+          "Use an external keyboard and mouse when possible",
+          "Keep your wrists in a neutral position while typing",
+          "Do wrist circles and stretches every 30 minutes",
+          "Consider a wrist rest or ergonomic keyboard",
+          "Reduce continuous typing by taking short voice-note breaks",
+        ],
+      },
+      {
+        title: "Eye Strain",
+        value: 51,
+        color: "#0e9a5b",
+        chip: "High Risk",
+        chipTone: "high",
+        factors: ["Infrequent eye breaks", "Screen below eye level"],
+        recommendations: [
+          "Apply the 20–20–20 rule consistently during study sessions",
+          "Adjust screen brightness to match your surrounding lighting",
+          "Use blue-light filtering glasses or enable night mode",
+        ],
+      },
+      {
+        title: "Finger Numbness",
+        value: 69,
+        color: "#c70039",
+        chip: "High Risk",
+        chipTone: "high",
+        factors: [
+          "Poor input ergonomics",
+          "Infrequent breaks",
+          "Pre-existing condition",
+        ],
+        recommendations: [
+          "Stretch and wiggle your fingers during every break",
+          "Avoid gripping your pen or mouse too tightly",
+          "Use an ergonomic mouse and keyboard to reduce strain",
+        ],
+      },
+    ];
+  }
+
+  // Generate dynamically based on predictions
+  return Object.keys(baseRiskDetails).map((key) => {
+    const details = baseRiskDetails[key];
+    const prediction = predictions[key];
+    
+    let value = 0;
+    
+    if (prediction) {
+      // Calculate risk % based on probability expectation:
+      // Risk % = P(Mild)*33 + P(Moderate)*67 + P(Chronic)*100
+      const prob = prediction.probabilities || [0, 0, 0, 0];
+      value = Math.round(prob[1] * 33 + prob[2] * 67 + prob[3] * 100);
+    }
+
+    let chip = "Low Risk";
+    let chipTone: "low" | "moderate" | "high" = "low";
+    
+    if (value > 60) {
+      chip = "High Risk";
+      chipTone = "high";
+    } else if (value > 30) {
+      chip = "Moderate Risk";
+      chipTone = "moderate";
+    }
+
+    return {
+      title: details.title,
+      value: value,
+      color: details.color,
+      chip: chip,
+      chipTone: chipTone,
+      factors: details.factors,
+      recommendations: details.recommendations,
+    };
+  });
+};
 
 function HeartIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -145,11 +265,13 @@ function WarningIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-function RiskChip({ tone, children }: { tone: "moderate" | "high"; children: React.ReactNode }) {
+function RiskChip({ tone, children }: { tone: "low" | "moderate" | "high"; children: React.ReactNode }) {
   const classes =
-    tone === "moderate"
-      ? "bg-[#efe19a] text-[#6f5600]"
-      : "bg-[#f7e2cf] text-[#c85f14]";
+    tone === "high"
+      ? "bg-[#fce8e6] text-[#c5221f]"
+      : tone === "moderate"
+      ? "bg-[#fef7e0] text-[#b06000]"
+      : "bg-[#e6f4ea] text-[#137333]"; // low risk
 
   return <span className={`inline-flex rounded-full px-3 py-1 text-[14px] font-medium ${classes}`}>{children}</span>;
 }
@@ -194,6 +316,10 @@ function LargeGauge({ value }: { value: number }) {
   const circumference = Math.PI * radius;
   const dashOffset = circumference - (value / 100) * circumference;
 
+  const label = value > 60 ? "High" : value > 30 ? "Moderate" : "Low";
+  const labelColor = value > 60 ? "text-[#c5221f]" : value > 30 ? "text-[#b06000]" : "text-[#137333]";
+  const strokeColor = value > 60 ? "#c70039" : value > 30 ? "#ef6c0c" : "#0e9a5b";
+
   return (
     <div className="relative mx-auto flex items-center justify-center" style={{ width: size, height: 180 }}>
       <svg width={size} height={180} viewBox={`0 0 ${size} 180`} className="overflow-visible">
@@ -207,7 +333,7 @@ function LargeGauge({ value }: { value: number }) {
         <path
           d={`M ${stroke / 2} ${size / 2} A ${radius} ${radius} 0 1 1 ${size - stroke / 2} ${size / 2}`}
           fill="none"
-          stroke="#f97316"
+          stroke={strokeColor}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -216,13 +342,13 @@ function LargeGauge({ value }: { value: number }) {
       </svg>
       <div className="absolute top-[52%] flex -translate-y-1/2 flex-col items-center">
         <div className="text-[38px] font-extrabold tracking-[-0.04em] text-[#111111]">{value}%</div>
-        <div className="-mt-1 text-[24px] text-[#8b5b24]">High</div>
+        <div className={`-mt-1 text-[24px] font-bold ${labelColor}`}>{label}</div>
       </div>
     </div>
   );
 }
 
-function BarChartCard() {
+function BarChartCard({ items }: { items: RiskItem[] }) {
   return (
     <div className="rounded-[26px] border border-[#ece1e4] bg-white px-6 py-6 sm:px-7">
       <div className="mb-4 flex items-center gap-2 text-[15px] font-semibold text-[#111111]">
@@ -246,11 +372,11 @@ function BarChartCard() {
         ))}
 
         <div className="absolute inset-x-6 bottom-0 flex items-end justify-between gap-4">
-          {riskItems.map((item) => (
+          {items.map((item) => (
             <div key={item.title} className="flex w-full flex-col items-center gap-2">
               <div className="flex h-[210px] items-end">
                 <div
-                  className="w-9 rounded-t-[6px] sm:w-10"
+                  className="w-9 rounded-t-[6px] sm:w-10 animate-pulse"
                   style={{ height: `${item.value * 2.1}px`, backgroundColor: item.color }}
                 />
               </div>
@@ -325,6 +451,24 @@ function BreakdownCard({ item }: { item: RiskItem }) {
 }
 
 export default function StudyPhysicalPainResultsPage() {
+  const [predictions, setPredictions] = useState<any>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const data = params.get('data');
+    if (data) {
+      try {
+        setPredictions(JSON.parse(decodeURIComponent(data)));
+      } catch (e) {
+        console.error("Failed to parse predictions:", e);
+      }
+    }
+  }, []);
+
+  const riskItems = generateRiskItems(predictions);
+  const overallRisk = Math.round(riskItems.reduce((acc, item) => acc + item.value, 0) / riskItems.length);
+  const elevatedRiskItems = riskItems.filter(item => item.value > 30);
+
   return (
     <main className="min-h-screen bg-[#faf7f8] text-[#171717]">
       <div className="mx-auto max-w-[1180px] px-5 py-8 sm:px-6 lg:px-8">
@@ -336,7 +480,7 @@ export default function StudyPhysicalPainResultsPage() {
             </div>
 
             <Link
-              href="/survey"
+              href="/survey1"
               className="inline-flex items-center gap-2 rounded-2xl bg-[#f3e7e8] px-4 py-2.5 text-[15px] font-medium text-[#4f3f45] transition-all duration-200 hover:bg-[#eddcde]"
             >
               <RefreshIcon className="h-4 w-4" />
@@ -358,29 +502,33 @@ export default function StudyPhysicalPainResultsPage() {
             </div>
 
             <div className="mt-10 grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-              <div className="rounded-[26px] border border-[#ece1e4] bg-white px-6 py-6 text-center">
+              <div className="rounded-[26px] border border-[#ece1e4] bg-white px-6 py-6 text-center flex flex-col justify-center">
                 <div className="text-[14px] font-bold uppercase tracking-[0.12em] text-[#7e6f74]">Overall Risk</div>
                 <div className="mt-3">
                   <LargeGauge value={overallRisk} />
                 </div>
               </div>
 
-              <BarChartCard />
+              <BarChartCard items={riskItems} />
             </div>
 
-            <div className="mt-10 rounded-[22px] border border-[#f0a2ad] bg-[#fbf0f2] px-6 py-5">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 text-[#ff334f]">
-                  <WarningIcon className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-[15px] font-semibold text-[#111111]">Attention: 5 areas at elevated risk</div>
-                  <p className="mt-1 text-[15px] leading-7 text-[#6c6065]">
-                    Wrist Pain, Neck Strain, Finger Numbness, Tension Headaches, Eye Strain are at high risk. Review the recommendations below to take action.
-                  </p>
+            {elevatedRiskItems.length > 0 && (
+              <div className="mt-10 rounded-[22px] border border-[#f0a2ad] bg-[#fbf0f2] px-6 py-5">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 text-[#ff334f]">
+                    <WarningIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-[15px] font-semibold text-[#111111]">
+                      Attention: {elevatedRiskItems.length} area{elevatedRiskItems.length > 1 ? "s" : ""} at elevated risk
+                    </div>
+                    <p className="mt-1 text-[15px] leading-7 text-[#6c6065]">
+                      {elevatedRiskItems.map(item => item.title).join(", ")} {elevatedRiskItems.length > 1 ? "are" : "is"} at elevated or high risk. Review the recommendations below to take action.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <section className="mt-12">
               <h2 className="text-[24px] font-extrabold tracking-[-0.03em] text-[#111111]">Detailed Breakdown</h2>
@@ -401,7 +549,7 @@ export default function StudyPhysicalPainResultsPage() {
 
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
                 <Link
-                  href="/survey"
+                  href="/survey1"
                   className="inline-flex items-center gap-2 rounded-2xl bg-rose-700 px-6 py-3.5 text-[16px] font-semibold text-white shadow-[0_10px_18px_rgba(190,24,93,0.18)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-rose-800"
                 >
                   <RefreshIcon className="h-4 w-4" />

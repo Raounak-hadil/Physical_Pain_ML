@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 type Choice = {
@@ -621,10 +622,189 @@ function ChoiceQuestion({
   );
 }
 
+const mapAnswersToModelInputs = (answers: Record<number, string>) => {
+  // Option mapping helper to convert UI choices to exact dataset strings
+  const translateBreakFrequency = (val: string) => {
+    if (val.includes("Never")) return "Never";
+    if (val.includes("Rarely")) return "Rarely";
+    if (val.includes("Sometimes")) return "Every 1-2 hours";
+    if (val.includes("Often")) return "Every 30-60 minutes";
+    if (val.includes("Always")) return "Every 30-60 minutes";
+    return "Never";
+  };
+
+  const translateBreakDuration = (val: string) => {
+    if (val.includes("don't take breaks")) return "I don't take breaks";
+    if (val.includes("Less than 5 minutes")) return "Less than 5 minutes";
+    if (val.includes("5–10 minutes")) return "5 - 10 minutes";
+    if (val.includes("10–20 minutes")) return "10 - 30 minutes";
+    if (val.includes("More than 20 minutes")) return "More than 30 minutes";
+    return "I don't take breaks";
+  };
+
+  const translateLeaveDesk = (val: string) => {
+    if (val.includes("walk around")) return "Yes, I walk or move around or just lie down on a bed or sofa";
+    if (val.includes("Sometimes")) return "Sometimes";
+    if (val.includes("No, I stay")) return "No, I stay seated";
+    return "No, I stay seated";
+  };
+
+  const translateWater = (val: string) => {
+    if (val.includes("Less than 0.5L") || val.includes("0.5L – 1L")) return "Less than 1L";
+    if (val.includes("1L – 1.5L")) return "1-1.5L";
+    if (val.includes("1.5L – 2L")) return "1.5-2L";
+    if (val.includes("More than 2L")) return "More than 2L";
+    return "Less than 1L";
+  };
+
+  const translateCaffeine = (val: string) => {
+    if (val.includes("Never")) return "Never";
+    if (val.includes("Rarely")) return "1–2 times per week";
+    if (val.includes("Sometimes")) return "3–5 times per week";
+    if (val.includes("Often")) return "1 drink per day";
+    if (val.includes("Very often")) return "+2 drinks per day";
+    return "Never";
+  };
+
+  const translateStress = (val: string) => {
+    if (val.includes("Very low") || val.includes("Low")) return "Low";
+    if (val.includes("Moderate")) return "Moderate";
+    if (val.includes("High") || val.includes("Very high")) return "High";
+    return "Moderate";
+  };
+
+  const translateLocation = (val: string) => {
+    if (val.includes("Desk")) return "Desk (at home/dorm)";
+    if (val.includes("Bed")) return "Bed";
+    if (val.includes("Library")) return "Library";
+    if (val.includes("Other")) return "Other";
+    return "Other";
+  };
+
+  const translateSeat = (val: string) => {
+    if (val.includes("Office chair")) return "Ergonomic / office chair (with back support)";
+    if (val.includes("Regular chair")) return "Wooden chair";
+    if (val.includes("Bed or couch")) return "Bed / floor (no chair)";
+    if (val.includes("Stool or floor")) return "Stool (no backrest)";
+    return "Other";
+  };
+
+  const translateInput = (val: string) => {
+    if (val.includes("Laptop keyboard only")) return "Laptop trackpad only";
+    if (val.includes("External keyboard")) return "External keyboard + mouse";
+    if (val.includes("Mixed")) return "External mouse only";
+    return "Laptop trackpad only";
+  };
+
+  const translatePosture = (val: string) => {
+    if (val.includes("Good posture")) return "Upright / straight back";
+    if (val.includes("Mostly okay")) return "Slightly slouched";
+    if (val.includes("Often slouched")) return "Heavily slouched / hunched";
+    if (val.includes("Very poor posture")) return "Lying down";
+    return "Slightly slouched";
+  };
+
+  const translateBackpack = (val: string) => {
+    if (val.includes("Very light")) return "I rarely carry a backpack";
+    if (val.includes("Light")) return "Less than 3 kg";
+    if (val.includes("Moderate")) return "3–5 kg";
+    if (val.includes("Heavy")) return "5–8 kg";
+    if (val.includes("Very heavy")) return "More than 8 kg";
+    return "Less than 3 kg";
+  };
+
+  const translateExercise = (val: string) => {
+    if (val.includes("Never")) return "No";
+    if (val.includes("1–2 times")) return "1 – 2 times";
+    if (val.includes("3–4 times")) return "3 – 4 times";
+    if (val.includes("5+ times")) return "+5 times";
+    return "No";
+  };
+
+  const translateSleep = (val: string) => {
+    if (val.includes("Less than 5 hours")) return "Less than 5h";
+    if (val.includes("5–6 hours")) return "5 – 6h";
+    if (val.includes("7–8 hours")) return "7 – 8h";
+    if (val.includes("More than 8 hours")) return "More than 8h";
+    return "7 – 8h";
+  };
+
+  const translatePainFrequency = (val: string) => {
+    if (val.includes("Never")) return "0 — Never";
+    if (val.includes("Rarely")) return "1 — Mild / occasional (once or twice)";
+    if (val.includes("Sometimes")) return "2 — Moderate / regular (a few times a week)";
+    if (val.includes("Often") || val.includes("Very often")) return "3 — Frequent / chronic (almost daily)";
+    return "0 — Never";
+  };
+
+  const translateDiscomfort = (val: string) => {
+    if (val.includes("None")) return "0 — No pain at all";
+    if (val.includes("Mild")) return "1 — Mild / occasional discomfort";
+    if (val.includes("Moderate")) return "2 — Frequent discomfort (affects my focus)";
+    if (val.includes("High") || val.includes("Very high")) return "3 — Chronic pain (affects my daily life)";
+    return "0 — No pain at all";
+  };
+
+  const translateGender = (val: string) => {
+    if (val.includes("Female")) return "Female";
+    if (val.includes("Male")) return "Male";
+    return "Unknown";
+  };
+
+  const translateInstitution = (val: string) => {
+    if (val.includes("University") || val.includes("College")) return "Public University";
+    return "Other";
+  };
+
+  const translateFieldOfStudy = (val: string) => {
+    if (val.includes("STEM")) return "Computer Science & Artificial Intelligence";
+    if (val.includes("Health sciences")) return "Medical & Health Sciences";
+    return "Unknown";
+  };
+
+  return {
+    daily_study_hours: parseFloat(answers[1] || "0"),
+    study_days_per_week: parseFloat(answers[2] || "0"),
+    longest_sitting_duration: parseFloat(answers[3] || "0"),
+    study_break_frequency: translateBreakFrequency(answers[4] || ""),
+    study_break_duration: translateBreakDuration(answers[5] || ""),
+    leave_desk_during_breaks: translateLeaveDesk(answers[6] || ""),
+    daily_water_intake: translateWater(answers[7] || ""),
+    caffeine_intake_frequency: translateCaffeine(answers[8] || ""),
+    daily_screen_time: parseFloat(answers[9] || "0"),
+    stress_level: translateStress(answers[10] || ""),
+    study_location: translateLocation(answers[11] || ""),
+    seat_type: translateSeat(answers[12] || ""),
+    input_method: translateInput(answers[13] || ""),
+    study_posture: translatePosture(answers[14] || ""),
+    leans_on_back: answers[15] || "Sometimes",
+    screen_at_eye_level: answers[16] || "Sometimes",
+    preexisting_musculoskeletal_condition: answers[17] || "No",
+    backpack_weight: translateBackpack(answers[18] || ""),
+    study_lighting: answers[19] || "Good lighting",
+    physical_activity_frequency: translateExercise(answers[20] || ""),
+    sleep_duration: translateSleep(answers[21] || ""),
+    back_pain_frequency: translatePainFrequency(answers[22] || ""),
+    neck_pain_frequency: translatePainFrequency(answers[23] || ""),
+    tension_headache_frequency: translatePainFrequency(answers[24] || ""),
+    wrist_pain_frequency: translatePainFrequency(answers[25] || ""),
+    eye_strain_frequency: translatePainFrequency(answers[26] || ""),
+    finger_numbness_frequency: translatePainFrequency(answers[27] || ""),
+    physical_discomfort_level: translateDiscomfort(answers[28] || ""),
+    age: parseFloat(answers[29] || "20"),
+    gender: translateGender(answers[30] || ""),
+    institution_type: translateInstitution(answers[31] || ""),
+    field_of_study: translateFieldOfStudy(answers[32] || ""),
+    year_of_study: answers[33] || "3rd year"
+  };
+};
+
 export default function StudyPhysicalPainSurveyPage() {
   const [currentSection, setCurrentSection] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [touched, setTouched] = useState<Record<number, boolean>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   const section = sections[currentSection];
   const totalQuestions = useMemo(() => sections.reduce((acc, item) => acc + item.questions.length, 0), []);
@@ -678,6 +858,34 @@ export default function StudyPhysicalPainSurveyPage() {
     setCurrentSection((prev) => Math.min(prev + 1, sections.length - 1));
   };
 
+  const handleSubmit = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    markSectionTouched();
+    if (!sectionComplete) return;
+
+    setIsSubmitting(true);
+    const mappedData = mapAnswersToModelInputs(answers);
+
+    try {
+      const response = await fetch("/api/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mappedData),
+      });
+
+      const result = await response.json();
+      if (result && result.success) {
+        router.push(`/results?data=${encodeURIComponent(JSON.stringify(result.predictions))}`);
+      } else {
+        alert("Prediction failed: " + (result.error || "Unknown error"));
+        setIsSubmitting(false);
+      }
+    } catch (error) {
+      alert("Error contacting prediction server: " + (error instanceof Error ? error.message : "Unknown error"));
+      setIsSubmitting(false);
+    }
+  };
+
   const completionMessage = sectionComplete
     ? currentSection === sections.length - 1
       ? "All questions answered — you can view your results"
@@ -686,6 +894,19 @@ export default function StudyPhysicalPainSurveyPage() {
 
   return (
     <main className="min-h-screen bg-[#faf7f8] text-[#171717]">
+      {isSubmitting && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/90 backdrop-blur-md transition-all duration-300">
+          <div className="relative flex h-24 w-24 items-center justify-center">
+            <div className="absolute inset-0 rounded-full border-4 border-rose-100 border-t-rose-700 animate-spin" />
+            <HeartIcon className="h-10 w-10 text-rose-600 animate-pulse" />
+          </div>
+          <h3 className="mt-6 text-xl font-bold tracking-tight text-[#111111] animate-bounce">Analyzing Workspace Ergonomics...</h3>
+          <p className="mt-2 text-sm text-[#7e6f74] text-center max-w-xs leading-relaxed px-4">
+            SomaTrack ML is computing your physical pain risks and generating dynamic clinical advice.
+          </p>
+        </div>
+      )}
+
       <div className="mx-auto max-w-[1180px] px-5 py-8 sm:px-6 lg:px-8">
         <div className="rounded-[28px] border border-[#efe3e6] bg-[#fffdfd] shadow-[0_12px_35px_rgba(52,35,42,0.04)]">
           <div className="border-b border-[#f1e7ea] px-6 py-6 sm:px-8">
@@ -810,23 +1031,20 @@ export default function StudyPhysicalPainSurveyPage() {
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-enabled:group-hover:translate-x-0.5" />
               </button>
             ) : (
-              <Link
-                href="/results"
-                onClick={(e) => {
-                  markSectionTouched();
-                  if (!sectionComplete) e.preventDefault();
-                }}
-                aria-disabled={!sectionComplete}
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!sectionComplete || isSubmitting}
                 className={[
-                  "group inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-[15px] font-semibold text-white transition-all duration-200",
+                  "group inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-[15px] font-semibold text-white transition-all duration-200 disabled:cursor-not-allowed disabled:shadow-none",
                   sectionComplete
                     ? "bg-rose-700 shadow-[0_8px_16px_rgba(190,24,93,0.18)] hover:-translate-y-0.5 hover:bg-rose-800"
-                    : "pointer-events-none bg-rose-300 shadow-none",
+                    : "bg-rose-300",
                 ].join(" ")}
               >
-                <span>See Results</span>
+                <span>{isSubmitting ? "Calculating..." : "See Results"}</span>
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-enabled:group-hover:translate-x-0.5" />
-              </Link>
+              </button>
             )}
           </div>
         </div>
