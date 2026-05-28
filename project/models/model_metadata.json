@@ -1,0 +1,60 @@
+{
+  "version": "1.0",
+  "trained_date": "2026-05-28",
+  "framework": "scikit-learn",
+  "pain_types": [
+    "back_pain",
+    "neck_pain",
+    "tension_headache",
+    "wrist_pain",
+    "eye_strain",
+    "finger_numbness"
+  ],
+  "models": {
+    "back_pain": {
+      "file": "back_pain_model.pkl",
+      "algorithm": "AdaBoost",
+      "features_count": 12,
+      "cv_f1_macro": 0.561
+    },
+    "neck_pain": {
+      "file": "neck_pain_model.pkl",
+      "algorithm": "Random Forest",
+      "features_count": 31,
+      "cv_f1_macro": 0.453
+    },
+    "tension_headache": {
+      "file": "tension_headache_model.pkl",
+      "algorithm": "Random Forest",
+      "features_count": 25,
+      "cv_f1_macro": 0.526
+    },
+    "wrist_pain": {
+      "file": "wrist_pain_model.pkl",
+      "algorithm": "AdaBoost",
+      "features_count": 26,
+      "cv_f1_macro": 0.436
+    },
+    "eye_strain": {
+      "file": "eye_strain_model.pkl",
+      "algorithm": "Random Forest",
+      "features_count": 27,
+      "cv_f1_macro": 0.488
+    },
+    "finger_numbness": {
+      "file": "finger_numbness_model.pkl",
+      "algorithm": "AdaBoost",
+      "features_count": 24,
+      "cv_f1_macro": 0.398
+    }
+  },
+  "total_features": 37,
+  "needs_scaling": [
+    "Na\u00efve Bayes",
+    "Logistic Regression",
+    "Neural Network",
+    "KNN",
+    "SVM"
+  ],
+  "random_seed": 42
+}
